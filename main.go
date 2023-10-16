@@ -1,3 +1,6 @@
+//TODO
+/// Sanitize inputs lmao
+
 package main
 
 import (
@@ -11,7 +14,6 @@ import (
 
 func main() {
 	db, err := sql.Open("sqlite3", "notes.db")
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -20,15 +22,35 @@ func main() {
 	createNewTable(db)
 
 	message := flag.String("add", "", "New todo to add")
-	listAll := flag.Int("list", 0, "choose items to list, 0 - inComplete, 1 - complete")
+	listAll := flag.Int("list", 3, "choose items to list, 0 - inComplete, 1 - complete")
+	removeItem := flag.Bool("remove", false, "Whether to open the item remove")
 	flag.Parse()
 
+	//flag handling
 	if flag.Lookup("add") != nil && *message != "" {
 		addNewItem(*message, db)
-	} else if flag.Parsed() {
-		listItems(db, *listAll)
+	} else if *listAll != 3 {
+		listItems(db, *listAll, "id,note")
+	} else if *removeItem {
+		removeFromTable(db)
 	} else {
 		flag.Usage()
+	}
+}
+
+// TODO - maybe add a like thing where if person
+//        puts an int then it deletes that otherwise chooser
+func removeFromTable(db *sql.DB) {
+	var id int
+	listItems(db, 0, "id,note")
+	fmt.Println("---------------------")
+	fmt.Println("Enter id number")
+	fmt.Printf("> ")
+	fmt.Scanln(&id)
+
+	_, err := db.Exec("UPDATE notes SET completed=1 WHERE id=?", id)
+	if err !=nil {
+		log.Fatal(err)
 	}
 }
 
@@ -41,16 +63,18 @@ func createNewTable(db *sql.DB) {
 	}
 }
 
-func listItems(db *sql.DB, listAll int) {
-	rows, err := db.Query("SELECT note FROM notes WHERE completed=?", listAll)
+func listItems(db *sql.DB, listAll int, cols string) {
+	query := fmt.Sprintf("SELECT %s FROM notes WHERE completed=?", cols)
+	rows, err := db.Query(query, listAll)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for rows.Next() {
 		var note string
-		rows.Scan(&note)
-		fmt.Println(note)
+		var id string
+		rows.Scan(&id,&note)
+		fmt.Println(id,note)
 	}
 }
 
