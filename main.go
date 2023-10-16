@@ -7,13 +7,23 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"os"
+	_ "os"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
+const defaultDBLoc string = "$HOME/notes.db"
+
 func main() {
-	db, err := sql.Open("sqlite3", "notes.db")
+	dbLoc := os.Getenv("GO_NOTE_LOC")
+	if dbLoc == "" {
+		dbLoc = os.ExpandEnv(defaultDBLoc)
+	}
+	
+	db, err := sql.Open("sqlite3", dbLoc)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,7 +33,7 @@ func main() {
 
 	message := flag.String("add", "", "New todo to add")
 	listAll := flag.Int("list", 3, "choose items to list, 0 - inComplete, 1 - complete")
-	removeItem := flag.Bool("remove", false, "Whether to open the item remove")
+	removeItem := flag.Bool("remove", false, "Whether to open the item remover")
 	flag.Parse()
 
 	//flag handling
